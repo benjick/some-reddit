@@ -191,20 +191,8 @@ End-user install steps live in [README.md](./README.md). What matters when chang
   CI overwrites the patch number with the run number; `package.json` only controls major.minor.
 - AMO requires the sources zip alongside the build because the output is bundled; `wxt zip -b firefox`
   emits both, and CI uploads it with `--upload-source-code`.
-
-### First release setup
-
-Not done yet:
-
-1. Create AMO API credentials at https://addons.mozilla.org/developers/addon/api/key/ and add them as the
-   repo secrets `AMO_JWT_ISSUER` and `AMO_JWT_SECRET`.
-2. Create the GitHub repo, commit and push.
-3. Watch the first CI run — the signing path has never been exercised. If AMO rejects it because the
-   add-on id does not exist yet, upload one build by hand on AMO as unlisted; every push after that is
-   signed by CI.
-
-Then Mac and Android both install from `releases/download/latest/some-reddit.xpi`. Delete this section
-once the first signed release exists.
+- AMO allows one API key per account, shared via the `AMO_JWT_*` secrets with `benjick/abb-extension` and
+  `benjick/bgg-extension`. Rotating it means updating all three repos.
 
 ## Testing
 
