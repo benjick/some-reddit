@@ -2,17 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Blocked</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main>
-      <h1>Reddit is blocked</h1>
-      <p id="reason"></p>
-      <p class="url" id="url"></p>
-      <p class="rule">Reddit opens when another site links you to a specific post.</p>
+    <canvas id="c" aria-hidden="true"></canvas>
+    <main id="intro">
+      <h1>Reddit is blocked because you asked for it</h1>
+      <p class="count" id="count" aria-hidden="true"></p>
     </main>
+    <div class="cue" id="cue" aria-hidden="true"></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

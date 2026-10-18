@@ -84,10 +84,3 @@ export function decide(ctx: NavContext): Verdict {
 
   return { allow: false, reason: 'no-referrer' };
 }
-
-export const BLOCK_MESSAGES: Record<BlockReason, string> = {
-  'not-deep-link': 'This is a listing page rather than a specific post.',
-  'left-granted-page': 'Your link opened a different page than this one.',
-  'internal-referrer': 'This link came from another Reddit page.',
-  'no-referrer': 'This was opened directly, not from a link somewhere else.',
-};
