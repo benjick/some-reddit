@@ -1,0 +1,96 @@
+name: CI
+
+# Every push to main is signed by AMO and published to one rolling release,
+# its assets replaced each time — same pattern as realmdo's realmpack. AMO
+# rejects a version number it has already signed, so the patch version is the
+# run number rather than whatever package.json says.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm compile
+      - run: pnpm test
+
+  release:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Unlisted signing is usually automatic and takes a few minutes, but AMO
+    # can hold a version for manual review.
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Version
+        id: version
+        run: |
+          base=$(node -p "require('./package.json').version.split('.').slice(0, 2).join('.')")
+          version="$base.$GITHUB_RUN_NUMBER"
+          npm pkg set version="$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          pnpm zip
+          pnpm zip:firefox
+
+      # Signs the same bundle that went into the firefox zip and downloads the
+      # signed .xpi. Android compatibility comes from gecko_android in the
+      # manifest, and is set explicitly in amo-metadata.json as well.
+      - name: Sign with AMO
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          pnpm exec web-ext sign \
+            --channel unlisted \
+            --source-dir .output/firefox-mv2 \
+            --upload-source-code .output/*-sources.zip \
+            --amo-metadata .github/amo-metadata.json \
+            --approval-timeout 1500000 \
+            --artifacts-dir dist
+
+      # Stable names, so releases/download/latest/some-reddit.xpi is a link
+      # that can be bookmarked on the phone.
+      - name: Collect
+        run: |
+          mkdir -p release
+          cp dist/*.xpi release/some-reddit.xpi
+          cp .output/*-chrome.zip release/some-reddit-chrome.zip
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release view latest >/dev/null 2>&1 || gh release create latest --title latest --notes ""
+          gh release upload latest release/* --clobber
+          gh release edit latest --title "$VERSION" --notes "$VERSION, built from ${GITHUB_SHA::8} on main."

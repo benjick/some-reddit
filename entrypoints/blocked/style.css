@@ -1,0 +1,68 @@
+/*
+ * Firefox for Android has no toolbar popup or prominent options surface, so
+ * this page is the extension's entire UI. Mobile-first, no interaction.
+ */
+:root {
+  --bg: #faf9f7;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --faint: #97918a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a;
+    --fg: #ededed;
+    --muted: #9a9a9a;
+    --faint: #6a655f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+}
+
+main {
+  max-width: 34rem;
+  width: 100%;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.375rem, 4.5vw, 1.75rem);
+  font-weight: 600;
+}
+
+p {
+  margin: 0 0 1rem;
+  font-size: 1.0625rem;
+  color: var(--muted);
+}
+
+.url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  color: var(--faint);
+  word-break: break-all;
+}
+
+.rule {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--faint) 35%, transparent);
+  font-size: 0.875rem;
+  color: var(--faint);
+}

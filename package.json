@@ -1,0 +1,26 @@
+{
+  "name": "some-reddit",
+  "description": "Blocks Reddit unless you were deep-linked in from another site.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "mkdir -p .wxt/firefox-data && wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "run:android": "web-ext run -t firefox-android --source-dir .output/firefox-mv2 --firefox-apk org.mozilla.fenix",
+    "compile": "tsc --noEmit",
+    "test": "vitest run",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.11",
+    "web-ext": "^10.5.0",
+    "wxt": "^0.21.4"
+  }
+}
