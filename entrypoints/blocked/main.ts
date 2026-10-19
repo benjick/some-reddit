@@ -1,21 +1,24 @@
 // Deliberately no explanation of why this page was blocked and no link back to
 // it — either would invite arguing with the block, and there is no escape
-// hatch by design. Just a countdown into a breathing exercise.
+// hatch by design. Just a short loading bar into a breathing exercise.
 
 const IN = 4000;
 const OUT = 6000;
 const CYCLE = IN + OUT;
-const COUNTDOWN_FROM = 3;
+const LOAD = 4000;
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cv = document.querySelector<HTMLCanvasElement>('#c')!;
 const ctx = cv.getContext('2d')!;
 const intro = document.querySelector<HTMLElement>('#intro')!;
-const count = document.querySelector<HTMLElement>('#count')!;
+const bar = document.querySelector<HTMLCanvasElement>('#bar')!;
+const bctx = bar.getContext('2d')!;
 const cue = document.querySelector<HTMLElement>('#cue')!;
 
 let W = 0;
 let H = 0;
+let BW = 0;
+let BH = 0;
 let lineColor = '';
 
 function readTheme() {
@@ -29,6 +32,11 @@ function resize() {
   cv.width = W * dpr;
   cv.height = H * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  BW = bar.clientWidth;
+  BH = bar.clientHeight;
+  bar.width = BW * dpr;
+  bar.height = BH * dpr;
+  bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 const ease = (x: number) => 0.5 - 0.5 * Math.cos(Math.PI * x);
@@ -140,10 +148,45 @@ function startBreathing() {
   }
 }
 
-function countdown(n: number) {
-  if (n === 0) return startBreathing();
-  count.textContent = String(n);
-  setTimeout(() => countdown(n - 1), 1000);
+// wavy progress bar: squiggly filled part, gap, then a flat faint track
+function drawBar(p: number, t: number) {
+  bctx.clearRect(0, 0, BW, BH);
+  const pad = 2; // half the stroke, so round caps aren't clipped
+  const end = BW - pad;
+  const x = pad + p * (end - pad);
+  const y = BH / 2;
+  // flatten near both ends so the wave grows in and settles out
+  const amp = reduce ? 0 : 3 * Math.min(1, p / 0.1, (1 - p) / 0.1);
+  bctx.lineWidth = 4;
+  bctx.lineCap = 'round';
+  bctx.strokeStyle = lineColor;
+
+  bctx.globalAlpha = 1;
+  bctx.beginPath();
+  const waveY = (px: number) => y + amp * Math.sin((px / 20) * Math.PI * 2 - t * 0.006);
+  bctx.moveTo(pad, waveY(pad));
+  for (let px = pad + 1; px < x; px++) bctx.lineTo(px, waveY(px));
+  bctx.lineTo(x, waveY(x));
+  bctx.stroke();
+
+  const gap = 10;
+  if (x + gap < end) {
+    bctx.globalAlpha = 0.25;
+    bctx.beginPath();
+    bctx.moveTo(x + gap, y);
+    bctx.lineTo(end, y);
+    bctx.stroke();
+  }
+}
+
+let loadStart: number | null = null;
+
+function load(now: number) {
+  if (loadStart === null) loadStart = now;
+  const p = Math.min(1, (now - loadStart) / LOAD);
+  drawBar(p, now);
+  if (p < 1) requestAnimationFrame(load);
+  else startBreathing();
 }
 
 readTheme();
@@ -164,5 +207,4 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
   if (breathing && reduce) frame(IN - 1);
 });
 
-// let the sentence land before the countdown starts
-setTimeout(() => countdown(COUNTDOWN_FROM), 1500);
+requestAnimationFrame(load);
