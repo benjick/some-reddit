@@ -5,7 +5,7 @@
  * it is fixed here.
  */
 
-import { classify, isAlwaysAllowed, isDeepLink, isExternalReferrer } from './urls';
+import { INBOX_KEY, classify, isAlwaysAllowed, isDeepLink, isExternalReferrer } from './urls';
 
 export type BlockReason =
   /** Homepage, listing, search — blocked no matter where you came from (policy rule 3). */
@@ -43,6 +43,12 @@ const CLICK_TRANSITIONS = new Set(['link']);
 export function decide(ctx: NavContext): Verdict {
   const { kind, key } = classify(ctx.url);
 
+  // Deviation: your own inbox is always reachable, and holding it is what lets
+  // the next hop into a thread through (below).
+  if (kind === 'inbox') {
+    return { allow: true, grantKey: INBOX_KEY };
+  }
+
   // Not Reddit, or a surface that was never about browsing (media, login).
   if (isAlwaysAllowed(kind)) {
     return { allow: true, grantKey: ctx.grantKey ?? null };
@@ -52,6 +58,14 @@ export function decide(ctx: NavContext): Verdict {
   // as the page the grant was issued for.
   if (ctx.grantKey && key === ctx.grantKey) {
     return { allow: true, grantKey: ctx.grantKey };
+  }
+
+  // Deviation: one hop from the inbox into a thread, so replies can be answered.
+  // Only threads — the inbox is not a doorway to listings, wikis or share links.
+  // Covers both an in-tab click (the tab holds the inbox grant, SPA or full
+  // load) and a middle-click into a new tab (same-origin full-URL referrer).
+  if (kind === 'thread' && (ctx.grantKey === INBOX_KEY || classify(ctx.referrer ?? '').kind === 'inbox')) {
+    return { allow: true, grantKey: key };
   }
 
   // Rule 2: a grant buys one page. Client-side routing anywhere else is the

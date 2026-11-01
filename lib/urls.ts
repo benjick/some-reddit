@@ -16,6 +16,11 @@ export type UrlKind =
   | 'media'
   /** Login and OAuth. Always allowed; blocking it would break the browser, not browsing. */
   | 'account'
+  /**
+   * Your own notifications / inbox. Always allowed, and grants exactly one hop
+   * to a thread so you can answer replies. See CLAUDE.md.
+   */
+  | 'inbox'
   /** Home, subreddit listings, /r/all, /popular, sort pages, profiles. Never allowed. */
   | 'listing'
   /** Search. Never allowed. */
@@ -46,6 +51,12 @@ const ROOT_LISTINGS = new Set([
   '', 'best', 'hot', 'new', 'top', 'rising', 'controversial',
   'popular', 'all', 'subreddits', 'users', 'explore',
 ]);
+
+/** Grant key held by a tab sitting on the inbox. */
+export const INBOX_KEY = 'inbox';
+
+/** Old-reddit inbox views that list replies to you. */
+const INBOX_MESSAGE_VIEWS = new Set(['inbox', 'unread', 'comments', 'selfreply', 'mentions']);
 
 const SORTS = new Set(['hot', 'new', 'top', 'rising', 'best', 'controversial', 'gilded']);
 
@@ -108,6 +119,13 @@ export function classify(rawUrl: string): Classification {
 
   if (first === 'login' || first === 'api' || first === 'oauth2') {
     return { kind: 'account', key: null, host, path };
+  }
+
+  if (
+    (first === 'notifications' && segments.length === 1) ||
+    (first === 'message' && segments.length === 2 && INBOX_MESSAGE_VIEWS.has(second ?? ''))
+  ) {
+    return { kind: 'inbox', key: INBOX_KEY, host, path };
   }
 
   if (first === 'media') {

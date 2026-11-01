@@ -26,15 +26,22 @@ not be softened without asking.
 4. **No escape hatch.** No override button, no unblock timer, no options-page toggle. Blocked is blocked;
    the only ways in are a real inbound link or disabling the extension.
 
-### Two deliberate deviations
+### Three deliberate deviations
 
-Both are narrow, both are load-bearing, and both are the first things to revisit if the extension feels
+All are narrow, all are load-bearing, and all are the first things to revisit if the extension feels
 wrong in daily use:
 
 - **Threads grant by thread id, not by exact URL.** Otherwise `?context=3` links and in-thread comment
   permalinks would re-block you inside a thread you were legitimately let into. Other threads stay blocked.
 - **`/login` and `/oauth2` are always allowed** (`kind: 'account'` in `lib/urls.ts`). Being unable to log
   in breaks the browser rather than breaking browsing, which is not what rule 4 is for.
+- **The inbox is always allowed and grants one hop to a thread** (`kind: 'inbox'`: `/notifications`, and
+  old reddit's `/message/{inbox,unread,comments,selfreply,mentions}`). The point is replying to people
+  who answered you in a thread you were legitimately let into. A tab on the inbox holds the special
+  `inbox` grant key; the next navigation to a `thread` (SPA, full load, or a new tab whose referrer is
+  the inbox) swaps it for that thread's key, and from there rule 2 applies as usual. Listings, profiles,
+  share links and wikis are not reachable from the inbox. Known leak: Reddit's notifications page can
+  include "trending" recommendation notifications, which are threads and therefore pass.
 
 ## Architecture
 
@@ -109,8 +116,9 @@ around them; resist putting policy decisions in it.
 
 `classify()` in `lib/urls.ts` maps a URL to a `UrlKind` and a grant key. Deep-linkable kinds are `thread`,
 `share` (`/r/{sub}/s/{id}` mobile share links), `wiki`, and `shortlink` (`redd.it/{id}`). Always-allowed
-kinds are `external`, `media`, and `account`. Everything else — `listing`, `search`, `other` — is blocked
-regardless of referrer.
+kinds are `external`, `media`, and `account`; `inbox` is also always allowed but handled separately in
+`decide()` because it sets a grant rather than preserving one. Everything else — `listing`, `search`,
+`other` — is blocked regardless of referrer.
 
 Subdomains (`old.`, `new.`, `np.`, `sh.`, `amp.`, `www.`) collapse onto the same key, so a grant issued on
 `www.reddit.com` still holds on `old.reddit.com`.

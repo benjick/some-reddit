@@ -20,6 +20,11 @@ describe('classify', () => {
     ['https://i.redd.it/x.jpg', 'media'],
     ['https://v.redd.it/x', 'media'],
     ['https://www.reddit.com/login/', 'account'],
+    ['https://www.reddit.com/notifications', 'inbox'],
+    ['https://old.reddit.com/message/inbox/', 'inbox'],
+    ['https://old.reddit.com/message/unread', 'inbox'],
+    ['https://www.reddit.com/notifications/settings', 'other'],
+    ['https://old.reddit.com/message/messages/', 'other'],
     ['https://example.com/r/rust/comments/abc', 'external'],
     ['not a url', 'external'],
   ])('%s -> %s', (url, kind) => {

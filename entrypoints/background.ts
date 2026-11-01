@@ -82,7 +82,13 @@ export default defineBackground(() => {
       grantKey: grant?.key ?? null,
       isSpaNavigation: true,
     });
-    if (!verdict.allow) await block(details.tabId, verdict.reason, details.url);
+    if (!verdict.allow) {
+      await block(details.tabId, verdict.reason, details.url);
+    } else if (verdict.grantKey && verdict.grantKey !== grant?.key) {
+      // The grant moves with the tab on the inbox -> thread hop, so the thread
+      // becomes the one page this tab holds and the inbox grant is spent.
+      await setGrant(details.tabId, verdict.grantKey, details.url);
+    }
   }
 
   browser.webNavigation.onHistoryStateUpdated.addListener(handleSpaNavigation);

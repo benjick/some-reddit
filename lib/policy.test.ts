@@ -171,6 +171,93 @@ const rows: Row[] = [
     expect: 'no-referrer',
   },
 
+  // --- Deviation: inbox grants one hop to a thread ------------------------
+  {
+    name: 'typing /notifications is allowed',
+    ctx: { url: 'https://www.reddit.com/notifications', referrer: null, transitionType: 'typed' },
+    expect: 'allow',
+    grantKey: 'inbox',
+  },
+  {
+    name: 'old reddit inbox is allowed',
+    ctx: { url: 'https://old.reddit.com/message/inbox/', referrer: null, transitionType: 'typed' },
+    expect: 'allow',
+    grantKey: 'inbox',
+  },
+  {
+    name: 'client-side route from a thread to notifications is allowed',
+    ctx: {
+      url: 'https://www.reddit.com/notifications',
+      grantKey: 'thread:abc123',
+      isSpaNavigation: true,
+    },
+    expect: 'allow',
+    grantKey: 'inbox',
+  },
+  {
+    name: 'client-side route from notifications to a reply is allowed',
+    ctx: {
+      url: 'https://www.reddit.com/r/rust/comments/def456/x/r3ply/',
+      grantKey: 'inbox',
+      isSpaNavigation: true,
+    },
+    expect: 'allow',
+    grantKey: 'thread:def456',
+  },
+  {
+    name: 'full load from notifications to a reply is allowed',
+    ctx: {
+      url: 'https://www.reddit.com/r/rust/comments/def456/x/r3ply/?context=3',
+      referrer: 'https://www.reddit.com/notifications',
+      grantKey: 'inbox',
+    },
+    expect: 'allow',
+    grantKey: 'thread:def456',
+  },
+  {
+    name: 'middle-click from notifications into a fresh tab is allowed',
+    ctx: {
+      url: 'https://www.reddit.com/r/rust/comments/def456/x/',
+      referrer: 'https://www.reddit.com/notifications',
+    },
+    expect: 'allow',
+    grantKey: 'thread:def456',
+  },
+  {
+    name: 'notifications -> subreddit listing is blocked',
+    ctx: { url: 'https://www.reddit.com/r/rust/', grantKey: 'inbox', isSpaNavigation: true },
+    expect: 'left-granted-page',
+  },
+  {
+    name: 'notifications -> user profile is blocked',
+    ctx: { url: 'https://www.reddit.com/user/someone/', grantKey: 'inbox', isSpaNavigation: true },
+    expect: 'left-granted-page',
+  },
+  {
+    name: 'notifications -> share link is blocked (threads only)',
+    ctx: { url: 'https://www.reddit.com/r/rust/s/Ab12Cd', grantKey: 'inbox', isSpaNavigation: true },
+    expect: 'left-granted-page',
+  },
+  {
+    name: 'thread reached via inbox does not unlock a second thread',
+    ctx: {
+      url: 'https://www.reddit.com/r/rust/comments/ghi789/x/',
+      grantKey: 'thread:def456',
+      isSpaNavigation: true,
+    },
+    expect: 'left-granted-page',
+  },
+  {
+    name: 'origin-only referrer from reddit does not count as the inbox',
+    ctx: { url: 'https://www.reddit.com/r/rust/comments/def456/x/', referrer: 'https://www.reddit.com/' },
+    expect: 'internal-referrer',
+  },
+  {
+    name: 'DMs are not the inbox',
+    ctx: { url: 'https://old.reddit.com/message/messages/', referrer: null, transitionType: 'typed' },
+    expect: 'not-deep-link',
+  },
+
   // --- Always-allowed surfaces --------------------------------------------
   {
     name: 'non-reddit pages are untouched',
